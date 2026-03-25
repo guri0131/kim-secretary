@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>김비서 - AI 업무 보조 어시스턴트</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+      background: #f0f2f8;
+      color: #2d3a4a;
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      background: linear-gradient(135deg, #1a237e 0%, #3949ab 60%, #5c6bc0 100%);
+      color: white;
+      padding: 40px 48px 32px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      box-shadow: 0 4px 20px rgba(26,35,126,0.25);
+    }
+
+    .avatar {
+      width: 72px; height: 72px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+      border: 3px solid rgba(255,255,255,0.5);
+      flex-shrink: 0;
+    }
+
+    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p  { font-size: 1rem; opacity: 0.85; margin-top: 4px; }
+
+    .badge {
+      margin-left: auto;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      padding: 6px 18px;
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+
+    /* MAIN LAYOUT */
+    main {
+      max-width: 1100px;
+      margin: 36px auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    /* CARDS */
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+    .card.full-width { grid-column: 1 / -1; }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #1a237e;
+    }
+    .card-title span.icon {
+      font-size: 1.3rem;
+    }
+
+    /* FEATURE LIST */
+    .feature-list { list-style: none; }
+    .feature-list li {
+      padding: 9px 0;
+      border-bottom: 1px solid #f0f2f8;
+      font-size: 0.93rem;
+      color: #4a5568;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .feature-list li:last-child { border-bottom: none; }
+    .feature-list li::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: #5c6bc0;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* STATUS TABLE */
+    .status-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .status-table th {
+      background: #f0f2f8;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      color: #3949ab;
+      border-radius: 8px;
+    }
+    .status-table td { padding: 12px 14px; border-bottom: 1px solid #f0f2f8; color: #4a5568; }
+    .status-table tr:last-child td { border-bottom: none; }
+
+    .tag {
+      display: inline-block;
+      background: #e8eaf6;
+      color: #3949ab;
+      border-radius: 12px;
+      padding: 3px 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .tag.pending { background: #fff3e0; color: #e65100; }
+    .tag.upcoming { background: #e8f5e9; color: #2e7d32; }
+
+    /* INSIGHT CARDS */
+    .insight-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .insight-item {
+      background: #f8f9ff;
+      border-left: 4px solid #5c6bc0;
+      border-radius: 0 10px 10px 0;
+      padding: 14px 16px;
+      font-size: 0.88rem;
+      color: #4a5568;
+      line-height: 1.6;
+    }
+    .insight-item strong { color: #1a237e; }
+
+    /* SCHEDULE */
+    .schedule-list { list-style: none; }
+    .schedule-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f2f8;
+    }
+    .schedule-item:last-child { border-bottom: none; }
+    .schedule-date {
+      background: #1a237e;
+      color: white;
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .schedule-text { font-size: 0.92rem; color: #4a5568; padding-top: 4px; }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 0.82rem;
+      color: #9aa5b4;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="avatar">🤖</div>
+  <div>
+    <h1>김비서</h1>
+    <p>마케팅팀의 스마트한 업무 파트너 · AI 업무 보조 어시스턴트</p>
+  </div>
+  <div class="badge">📅 2026년 3월 기준</div>
+</header>
+
+<main>
+
+  <!-- 일정 & 회의 관리 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">📅</span> 일정 & 회의 관리</div>
+    <ul class="feature-list">
+      <li>주간 회의 일정 자동 알림</li>
+      <li>회의록 작성 및 요약</li>
+      <li>팀원별 할 일 목록 관리</li>
+    </ul>
+  </div>
+
+  <!-- 데이터 분석 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">📊</span> 데이터 분석</div>
+    <ul class="feature-list">
+      <li>매출 데이터 자동 집계 및 리포트 생성</li>
+      <li>제품별 / 지역별 매출 트렌드 분석</li>
+      <li>대시보드 데이터 업데이트</li>
+    </ul>
+  </div>
+
+  <!-- 문서 작성 지원 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">📝</span> 문서 작성 지원</div>
+    <ul class="feature-list">
+      <li>기획안 초안 작성 보조</li>
+      <li>캠페인 성과 보고서 작성</li>
+      <li>경쟁사 분석 자료 정리</li>
+    </ul>
+  </div>
+
+  <!-- 마케팅 업무 지원 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">📣</span> 마케팅 업무 지원</div>
+    <ul class="feature-list">
+      <li>SNS 광고 성과 모니터링</li>
+      <li>인플루언서 협업 커뮤니케이션 관리</li>
+      <li>프로모션 일정 및 예산 트래킹</li>
+    </ul>
+  </div>
+
+  <!-- 업무 처리 현황 -->
+  <div class="card full-width">
+    <div class="card-title"><span class="icon">📋</span> 업무 처리 현황</div>
+    <table class="status-table">
+      <thead>
+        <tr>
+          <th>업무 항목</th>
+          <th>담당자</th>
+          <th>마감</th>
+          <th>상태</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>3월 프로모션 기획안 초안</td>
+          <td>김대리</td>
+          <td>수요일</td>
+          <td><span class="tag pending">진행 중</span></td>
+        </tr>
+        <tr>
+          <td>인플루언서 미팅 일정 조율</td>
+          <td>이과장</td>
+          <td>금요일</td>
+          <td><span class="tag pending">진행 중</span></td>
+        </tr>
+        <tr>
+          <td>영상 광고 3개 제작 관리</td>
+          <td>박사원</td>
+          <td>-</td>
+          <td><span class="tag pending">진행 중</span></td>
+        </tr>
+        <tr>
+          <td>경쟁사 C사 캠페인 분석</td>
+          <td>박사원</td>
+          <td>-</td>
+          <td><span class="tag pending">진행 중</span></td>
+        </tr>
+        <tr>
+          <td>4월 신제품 티저 기획</td>
+          <td>-</td>
+          <td>3월 넷째 주</td>
+          <td><span class="tag upcoming">예정</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 주요 인사이트 -->
+  <div class="card full-width">
+    <div class="card-title"><span class="icon">💡</span> 최근 주요 인사이트</div>
+    <div class="insight-grid">
+      <div class="insight-item">
+        <strong>영상형 광고(B안)</strong>이 이미지형(A안) 대비 클릭률 <strong>2.3배</strong> 높음<br>→ 향후 영상 중심 전략 권장
+      </div>
+      <div class="insight-item">
+        <strong>무선 이어폰</strong>이 전 지역 최고 매출 기록<br>1~2월 누적 약 <strong>2,900만원</strong>
+      </div>
+      <div class="insight-item">
+        <strong>서울</strong> 지역 매출 비중 가장 높음<br><strong>대구</strong> 지역 성장세 주목 필요
+      </div>
+      <div class="insight-item">
+        영상 제작비 추가 <strong>200만원</strong> 예산 요청 예정<br>→ 재무팀 사전 소통 권장
+      </div>
+    </div>
+  </div>
+
+  <!-- 다음 주요 일정 -->
+  <div class="card full-width">
+    <div class="card-title"><span class="icon">🗓️</span> 다음 주요 일정</div>
+    <ul class="schedule-list">
+      <li class="schedule-item">
+        <span class="schedule-date">03 / 25 (수)</span>
+        <span class="schedule-text">3월 프로모션 기획안 초안 마감</span>
+      </li>
+      <li class="schedule-item">
+        <span class="schedule-date">03 / 28 (금)</span>
+        <span class="schedule-text">인플루언서 미팅 일정 확정</span>
+      </li>
+      <li class="schedule-item">
+        <span class="schedule-date">3월 넷째 주</span>
+        <span class="schedule-text">4월 신제품 티저 캠페인 시작</span>
+      </li>
+      <li class="schedule-item">
+        <span class="schedule-date">04 / 07 (월)</span>
+        <span class="schedule-text">주간 회의 — 3월 성과 종합 검토</span>
+      </li>
+    </ul>
+  </div>
+
+</main>
+
+<footer>
+  김비서 v1.0 &nbsp;|&nbsp; 마케팅팀 전용 &nbsp;|&nbsp; 최종 업데이트: 2026-03-25 &nbsp;|&nbsp; 문의: 정팀장
+</footer>
+
+</body>
+</html>
