@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마케팅팀 업무 대시보드</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0d1117;
+  --surface:   #161b22;
+  --surface2:  #21262d;
+  --border:    #30363d;
+  --text:      #e6edf3;
+  --muted:     #7d8590;
+  --blue:      #58a6ff;
+  --green:     #3fb950;
+  --yellow:    #d29922;
+  --red:       #f85149;
+  --purple:    #bc8cff;
+  --orange:    #f0883e;
+  --teal:      #39d0d8;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  padding: 20px 28px 48px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ─── HEADER ─────────────────────────────────── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.header h1 {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+.header .subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.header-right { text-align: right; }
+.date-display {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--blue);
+}
+.time-display {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── KPI GRID ───────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.kpi-card.c-blue::before   { background: var(--blue);   }
+.kpi-card.c-green::before  { background: var(--green);  }
+.kpi-card.c-yellow::before { background: var(--yellow); }
+.kpi-card.c-purple::before { background: var(--purple); }
+
+.kpi-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 9px;
+}
+.kpi-value {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  line-height: 1;
+}
+.kpi-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.kpi-icon {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 28px;
+  opacity: 0.12;
+}
+
+/* ─── LAYOUT GRIDS ───────────────────────────── */
+.row { display: grid; gap: 14px; margin-bottom: 14px; }
+.row-2  { grid-template-columns: 1fr 1fr; }
+.row-3  { grid-template-columns: 1.4fr 1fr 0.8fr; }
+
+/* ─── CARD ───────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.card-badge {
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--surface2);
+  padding: 2px 9px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+
+/* ─── TODO LIST ──────────────────────────────── */
+.todo-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.todo-list::-webkit-scrollbar { width: 4px; }
+.todo-list::-webkit-scrollbar-track { background: transparent; }
+.todo-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  background: var(--surface2);
+  border: 1px solid transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: border-color 0.15s, opacity 0.2s;
+  user-select: none;
+}
+.todo-item:hover { border-color: var(--border); }
+.todo-item.done  { opacity: 0.45; }
+.todo-item.done .todo-text { text-decoration: line-through; color: var(--muted); }
+
+.todo-checkbox {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  border-radius: 4px;
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 900;
+  color: transparent;
+}
+.todo-checkbox.checked {
+  background: var(--green);
+  border-color: var(--green);
+  color: #000;
+}
+
+.priority-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  min-width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.priority-badge.high   { background: rgba(248,81,73,0.15);   color: var(--red);    }
+.priority-badge.medium { background: rgba(210,153,34,0.15);  color: var(--yellow); }
+.priority-badge.low    { background: rgba(63,185,80,0.15);   color: var(--green);  }
+
+.todo-text {
+  flex: 1;
+  font-size: 12.5px;
+  color: var(--text);
+}
+.todo-meta {
+  font-size: 10.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ─── ADD TODO ───────────────────────────────── */
+.add-todo {
+  display: flex;
+  gap: 7px;
+  margin-top: 11px;
+  padding-top: 11px;
+  border-top: 1px solid var(--border);
+}
+.add-todo input,
+.add-todo select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.add-todo input { flex: 1; }
+.add-todo input:focus,
+.add-todo select:focus { border-color: var(--blue); }
+.add-todo input::placeholder { color: var(--muted); }
+.add-todo select { cursor: pointer; }
+.add-todo button {
+  background: var(--blue);
+  border: none;
+  border-radius: 6px;
+  color: #0d1117;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.add-todo button:hover { opacity: 0.85; }
+
+/* ─── WEEKLY CALENDAR ────────────────────────── */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.day-cell {
+  background: var(--surface2);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 9px 7px;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.day-cell.today  { border-color: var(--blue); background: rgba(88,166,255,0.06); }
+.day-cell.weekend { opacity: 0.6; }
+
+.day-header { text-align: center; margin-bottom: 5px; }
+.day-name {
+  font-size: 9.5px;
+  color: var(--muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.day-num {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+}
+.day-cell.today .day-num { color: var(--blue); }
+
+.day-event {
+  font-size: 9.5px;
+  padding: 3px 5px;
+  border-radius: 4px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+.day-event.deadline { background: rgba(248,81,73,0.18);  color: var(--red);    }
+.day-event.meeting  { background: rgba(88,166,255,0.18); color: var(--blue);   }
+.day-event.event    { background: rgba(188,140,255,0.18);color: var(--purple); }
+.day-event.task     { background: rgba(210,153,34,0.18); color: var(--yellow); }
+
+.upcoming-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  padding: 5px 0;
+}
+.upcoming-date {
+  font-weight: 700;
+  min-width: 38px;
+  flex-shrink: 0;
+}
+
+/* ─── PROJECTS ───────────────────────────────── */
+.project-list { display: flex; flex-direction: column; gap: 15px; }
+.project-item { display: flex; flex-direction: column; gap: 5px; }
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.project-name  { font-size: 12.5px; font-weight: 600; }
+.project-pct   { font-size: 12px; font-weight: 800; }
+.progress-bar  {
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s cubic-bezier(0.4,0,0.2,1);
+}
+.project-meta  { font-size: 11px; color: var(--muted); }
+
+/* ─── REGION LIST ────────────────────────────── */
+.region-list { display: flex; flex-direction: column; gap: 9px; margin-top: 10px; }
+.region-item { display: flex; align-items: center; gap: 9px; }
+.region-dot  {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.region-label { font-size: 12.5px; min-width: 28px; }
+.region-bar-wrap {
+  flex: 1;
+  height: 5px;
+  background: var(--surface2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.region-bar-fill { height: 100%; border-radius: 3px; }
+.region-val { font-size: 11px; color: var(--muted); min-width: 68px; text-align: right; }
+
+/* ─── CATEGORY LEGEND ────────────────────────── */
+.cat-legend { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+.cat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.cat-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.cat-val { margin-left: auto; color: var(--muted); }
+
+/* ─── CHART WRAP ─────────────────────────────── */
+.chart-wrap { position: relative; width: 100%; }
+
+/* ─── SCROLLBAR GLOBAL ───────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ─── DIVIDER ────────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+}
+
+/* ─── RESPONSIVE ─────────────────────────────── */
+@media (max-width: 1100px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .row-2, .row-3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══════════════════════════════════════════════════ -->
+<div class="header">
+  <div>
+    <h1>📊 마케팅팀 업무 대시보드</h1>
+    <div class="subtitle">회의록(2026.03.09) · 매출데이터(2026.01~02) · AI 인프라 포럼 일정 기반</div>
+  </div>
+  <div class="header-right">
+    <div class="date-display" id="dateDisplay">—</div>
+    <div class="time-display" id="timeDisplay">—</div>
+  </div>
+</div>
+
+<!-- ══ KPI CARDS ════════════════════════════════════════════════ -->
+<div class="kpi-grid">
+  <div class="kpi-card c-blue">
+    <div class="kpi-icon">💰</div>
+    <div class="kpi-label">총 누적 매출</div>
+    <div class="kpi-value">7,101<span style="font-size:15px;font-weight:600;">만원</span></div>
+    <div class="kpi-sub">2026.01.05 ~ 02.10 · 총 30건</div>
+  </div>
+  <div class="kpi-card c-green">
+    <div class="kpi-icon">📅</div>
+    <div class="kpi-label">1월 매출</div>
+    <div class="kpi-value">4,650<span style="font-size:15px;font-weight:600;">만원</span></div>
+    <div class="kpi-sub">21건 거래 · 7개 날짜</div>
+  </div>
+  <div class="kpi-card c-yellow">
+    <div class="kpi-icon">📈</div>
+    <div class="kpi-label">2월 매출 (1~10일)</div>
+    <div class="kpi-value">2,451<span style="font-size:15px;font-weight:600;">만원</span></div>
+    <div class="kpi-sub">9건 거래 · 부분 집계</div>
+  </div>
+  <div class="kpi-card c-purple">
+    <div class="kpi-icon">🏆</div>
+    <div class="kpi-label">최고 매출 제품</div>
+    <div class="kpi-value" style="font-size:18px;">무선 이어폰</div>
+    <div class="kpi-sub">2,884만원 · 전체의 40.6%</div>
+  </div>
+</div>
+
+<!-- ══ ROW 1 : TODO + SCHEDULE ══════════════════════════════════ -->
+<div class="row row-2">
+
+  <!-- TODO -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">✅&nbsp; 오늘 할 일</div>
+      <span class="card-badge" id="taskCountBadge">0 / 0 완료</span>
+    </div>
+    <ul class="todo-list" id="todoList"></ul>
+    <div class="add-todo">
+      <input type="text" id="newTodoInput" placeholder="새 할 일 입력 후 Enter 또는 + 추가 버튼..." />
+      <select id="newTodoPriority">
+        <option value="high">🔴 높음</option>
+        <option value="medium" selected>🟡 보통</option>
+        <option value="low">🟢 낮음</option>
+      </select>
+      <button onclick="addTodo()">+ 추가</button>
+    </div>
+  </div>
+
+  <!-- WEEKLY SCHEDULE -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📅&nbsp; 이번 주 일정</div>
+      <span class="card-badge">2026년 3월 3주차</span>
+    </div>
+    <div class="week-grid">
+      <div class="day-cell today">
+        <div class="day-header">
+          <div class="day-name">MON</div>
+          <div class="day-num">17</div>
+        </div>
+        <div class="day-event meeting">오늘</div>
+        <div class="day-event task">광고 제작 착수</div>
+      </div>
+      <div class="day-cell">
+        <div class="day-header">
+          <div class="day-name">TUE</div>
+          <div class="day-num">18</div>
+        </div>
+        <div class="day-event task">경쟁사 분석</div>
+      </div>
+      <div class="day-cell">
+        <div class="day-header">
+          <div class="day-name">WED</div>
+          <div class="day-num">19</div>
+        </div>
+        <div class="day-event deadline">⚠ 프로모션 기획안 마감</div>
+      </div>
+      <div class="day-cell">
+        <div class="day-header">
+          <div class="day-name">THU</div>
+          <div class="day-num">20</div>
+        </div>
+        <div class="day-event task">기획안 검토</div>
+      </div>
+      <div class="day-cell">
+        <div class="day-header">
+          <div class="day-name">FRI</div>
+          <div class="day-num">21</div>
+        </div>
+        <div class="day-event deadline">⚠ 인플루언서 미팅 확정</div>
+      </div>
+      <div class="day-cell weekend">
+        <div class="day-header">
+          <div class="day-name">SAT</div>
+          <div class="day-num">22</div>
+        </div>
+      </div>
+      <div class="day-cell weekend">
+        <div class="day-header">
+          <div class="day-name">SUN</div>
+          <div class="day-num">23</div>
+        </div>
+      </div>
+    </div>
+    <hr class="divider">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.9px;color:var(--muted);font-weight:700;margin-bottom:8px;">다가오는 일정</div>
+    <div class="upcoming-row">
+      <span class="upcoming-date" style="color:var(--purple);">3/24~</span>
+      <span>4월 신제품 티저 캠페인 시작 (3월 넷째 주)</span>
+    </div>
+    <div class="upcoming-row">
+      <span class="upcoming-date" style="color:var(--orange);">3/31</span>
+      <span>🏟 AI 인프라 포럼 2026 — 아주대학교 연암관 대강당</span>
+    </div>
+    <div class="upcoming-row">
+      <span class="upcoming-date" style="color:var(--yellow);">추후</span>
+      <span>영상 제작비 추가 예산 200만원 요청 예정</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ROW 2 : PROJECTS + PRODUCT CHART ════════════════════════ -->
+<div class="row row-2">
+
+  <!-- PROJECTS -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📁&nbsp; 프로젝트 진행률</div>
+      <span class="card-badge">마케팅팀 5개 프로젝트</span>
+    </div>
+    <div class="project-list">
+      <div class="project-item">
+        <div class="project-header">
+          <span class="project-name">SNS 광고 캠페인</span>
+          <span class="project-pct" style="color:var(--green);">75%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:75%;background:var(--green);"></div>
+        </div>
+        <div class="project-meta">A/B 테스트 완료 (B안 2.3배 클릭률) · 영상 광고 3개 추가 제작 중</div>
+      </div>
+      <div class="project-item">
+        <div class="project-header">
+          <span class="project-name">블로그 콘텐츠</span>
+          <span class="project-pct" style="color:var(--blue);">80%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:80%;background:var(--blue);"></div>
+        </div>
+        <div class="project-meta">3건 발행 완료 · 이번 달 목표 순항 중</div>
+      </div>
+      <div class="project-item">
+        <div class="project-header">
+          <span class="project-name">인플루언서 협업</span>
+          <span class="project-pct" style="color:var(--yellow);">33%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:33%;background:var(--yellow);"></div>
+        </div>
+        <div class="project-meta">3곳 제안 발송 → 1곳 회신 수령 (푸드스타일리 김OO) · 미팅 일정 조율 중</div>
+      </div>
+      <div class="project-item">
+        <div class="project-header">
+          <span class="project-name">3월 프로모션 기획</span>
+          <span class="project-pct" style="color:var(--orange);">20%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:20%;background:var(--orange);"></div>
+        </div>
+        <div class="project-meta">초안 작성 중 (담당: 김대리) · ⚠ 마감: 3월 19일 수요일</div>
+      </div>
+      <div class="project-item">
+        <div class="project-header">
+          <span class="project-name">4월 신제품 티저</span>
+          <span class="project-pct" style="color:var(--purple);">10%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:10%;background:var(--purple);"></div>
+        </div>
+        <div class="project-meta">3월 넷째 주 시작 예정 · 기획 단계</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCT CHART -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🛒&nbsp; 제품별 누적 매출</div>
+      <span class="card-badge">전체 기간</span>
+    </div>
+    <div class="chart-wrap" style="height:280px;">
+      <canvas id="productChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ROW 3 : MONTHLY + REGION + CATEGORY ══════════════════════ -->
+<div class="row row-3">
+
+  <!-- MONTHLY -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📆&nbsp; 월별 매출 현황</div>
+      <span class="card-badge">1월 vs 2월(부분)</span>
+    </div>
+    <div class="chart-wrap" style="height:200px;">
+      <canvas id="monthlyChart"></canvas>
+    </div>
+    <hr class="divider">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px;">
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px;">1월 (전체)</div>
+        <div style="font-size:20px;font-weight:800;color:var(--blue);">4,650만원</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;">21건 · 7개 날짜</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px;">2월 (1~10일)</div>
+        <div style="font-size:20px;font-weight:800;color:var(--green);">2,451만원</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;">9건 · 3개 날짜</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REGION -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📍&nbsp; 지역별 매출</div>
+      <span class="card-badge">누적</span>
+    </div>
+    <div class="chart-wrap" style="height:160px;">
+      <canvas id="regionChart"></canvas>
+    </div>
+    <div class="region-list">
+      <div class="region-item">
+        <div class="region-dot" style="background:var(--blue);"></div>
+        <span class="region-label">서울</span>
+        <div class="region-bar-wrap"><div class="region-bar-fill" style="width:58.1%;background:var(--blue);"></div></div>
+        <span class="region-val">4,128만원</span>
+      </div>
+      <div class="region-item">
+        <div class="region-dot" style="background:var(--purple);"></div>
+        <span class="region-label">대구</span>
+        <div class="region-bar-wrap"><div class="region-bar-fill" style="width:22.4%;background:var(--purple);"></div></div>
+        <span class="region-val">1,591만원</span>
+      </div>
+      <div class="region-item">
+        <div class="region-dot" style="background:var(--green);"></div>
+        <span class="region-label">부산</span>
+        <div class="region-bar-wrap"><div class="region-bar-fill" style="width:19.5%;background:var(--green);"></div></div>
+        <span class="region-val">1,382만원</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATEGORY -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📂&nbsp; 카테고리 비중</div>
+      <span class="card-badge">전체</span>
+    </div>
+    <div class="chart-wrap" style="height:160px;">
+      <canvas id="categoryChart"></canvas>
+    </div>
+    <div class="cat-legend">
+      <div class="cat-row">
+        <div class="cat-dot" style="background:var(--blue);"></div>
+        <span>전자기기</span>
+        <span class="cat-val">5,332만원 · 75.1%</span>
+      </div>
+      <div class="cat-row">
+        <div class="cat-dot" style="background:var(--green);"></div>
+        <span>생활용품</span>
+        <span class="cat-val">1,769만원 · 24.9%</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ SCRIPTS ══════════════════════════════════════════════════ -->
+<script>
+/* ── 1. 시계 ─────────────────────────────────── */
+(function tick() {
+  const now = new Date();
+  const DAYS = ['일','월','화','수','목','금','토'];
+  document.getElementById('dateDisplay').textContent =
+    `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${DAYS[now.getDay()]})`;
+  document.getElementById('timeDisplay').textContent =
+    now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  setTimeout(tick, 1000);
+})();
+
+/* ── 2. 할 일 ────────────────────────────────── */
+const PRIORITY_LABEL = { high:'높음', medium:'보통', low:'낮음' };
+
+let todos = [
+  { id:1, text:'영상 광고 3개 추가 제작 착수 (박사원)',      priority:'high',   done:false, meta:'이번 주' },
+  { id:2, text:'3월 프로모션 기획안 초안 작성 (김대리)',      priority:'high',   done:false, meta:'⚠ 수요일 마감' },
+  { id:3, text:'인플루언서 미팅 일정 확정 (이과장)',          priority:'high',   done:false, meta:'⚠ 금요일 마감' },
+  { id:4, text:'경쟁사 C사 신규 캠페인 분석 (박사원)',        priority:'medium', done:false, meta:'이번 주' },
+  { id:5, text:'4월 신제품 티저 콘텐츠 방향 논의',            priority:'medium', done:false, meta:'3/24 전' },
+  { id:6, text:'영상 제작비 예산 조정 요청서 작성 (+200만원)',priority:'low',    done:false, meta:'이번 주' },
+];
+let _nextId = 100;
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderTodos() {
+  const done = todos.filter(t => t.done).length;
+  document.getElementById('taskCountBadge').textContent = `${done} / ${todos.length} 완료`;
+
+  document.getElementById('todoList').innerHTML = todos.map(t => `
+    <li class="todo-item${t.done?' done':''}" onclick="toggleTodo(${t.id})">
+      <div class="todo-checkbox${t.done?' checked':''}">&#10003;</div>
+      <span class="priority-badge ${t.priority}">${PRIORITY_LABEL[t.priority]}</span>
+      <span class="todo-text">${esc(t.text)}</span>
+      ${t.meta ? `<span class="todo-meta">${esc(t.meta)}</span>` : ''}
+    </li>
+  `).join('');
+}
+
+function toggleTodo(id) {
+  const t = todos.find(x => x.id === id);
+  if (t) { t.done = !t.done; renderTodos(); }
+}
+
+function addTodo() {
+  const inp = document.getElementById('newTodoInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  const priority = document.getElementById('newTodoPriority').value;
+  todos.push({ id: _nextId++, text, priority, done: false, meta: '오늘' });
+  inp.value = '';
+  renderTodos();
+}
+
+document.getElementById('newTodoInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTodo();
+});
+
+renderTodos();
+
+/* ── 3. 차트 공통 설정 ─────────────────────────── */
+Chart.defaults.color = '#7d8590';
+Chart.defaults.borderColor = '#30363d';
+Chart.defaults.font.family =
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif";
+
+/* ── 4. 제품별 매출 (가로 막대) ─────────────────── */
+new Chart(document.getElementById('productChart'), {
+  type: 'bar',
+  data: {
+    labels: ['무선 이어폰','텀블러','블루투스 스피커','보조배터리','에코백','무선 충전기'],
+    datasets: [{
+      label: '매출액',
+      data: [2884, 1153, 960, 903, 617, 585],
+      backgroundColor: ['#58a6ff','#3fb950','#bc8cff','#f0883e','#39d0d8','#d29922'],
+      borderRadius: 5,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: { label: ctx => ` ${ctx.parsed.x.toLocaleString()}만원` }
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: '#21262d' },
+        ticks: { callback: v => v + '만' }
+      },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+/* ── 5. 월별 매출 (막대) ──────────────────────── */
+new Chart(document.getElementById('monthlyChart'), {
+  type: 'bar',
+  data: {
+    labels: ['1월 전체','2월 (1~10일)'],
+    datasets: [{
+      label: '매출액',
+      data: [4650, 2451],
+      backgroundColor: ['rgba(88,166,255,0.75)', 'rgba(63,185,80,0.75)'],
+      borderColor:     ['#58a6ff','#3fb950'],
+      borderWidth: 2,
+      borderRadius: 7,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: { label: ctx => ` ${ctx.parsed.y.toLocaleString()}만원` }
+      }
+    },
+    scales: {
+      x: { grid: { display: false } },
+      y: {
+        grid: { color: '#21262d' },
+        ticks: { callback: v => v + '만' },
+        beginAtZero: true
+      }
+    }
+  }
+});
+
+/* ── 6. 지역별 (도넛) ─────────────────────────── */
+new Chart(document.getElementById('regionChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['서울','대구','부산'],
+    datasets: [{
+      data: [4128, 1591, 1382],
+      backgroundColor: ['#58a6ff','#bc8cff','#3fb950'],
+      borderWidth: 0,
+      hoverOffset: 5,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '66%',
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { padding: 12, boxWidth: 10, font: { size: 11 } }
+      },
+      tooltip: {
+        callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()}만원` }
+      }
+    }
+  }
+});
+
+/* ── 7. 카테고리 (도넛) ───────────────────────── */
+new Chart(document.getElementById('categoryChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['전자기기','생활용품'],
+    datasets: [{
+      data: [5332, 1769],
+      backgroundColor: ['#58a6ff','#3fb950'],
+      borderWidth: 0,
+      hoverOffset: 5,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '66%',
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { padding: 12, boxWidth: 10, font: { size: 11 } }
+      },
+      tooltip: {
+        callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()}만원` }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
